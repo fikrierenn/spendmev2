@@ -30,11 +30,16 @@ const queryClient = new QueryClient();
 register();
 
 function App() {
+  // GitHub Pages için basename ayarı
+  const basename = process.env.NODE_ENV === 'production' && window.location.hostname === 'fikrierenn.github.io' 
+    ? '/spendmev2' 
+    : '';
+
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
         <ThemeProvider>
-          <Router>
+          <Router basename={basename}>
     <div className="App">
                     <Routes>
             <Route path="/login" element={<AILogin />} />
