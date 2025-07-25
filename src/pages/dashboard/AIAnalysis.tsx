@@ -201,7 +201,8 @@ const AIAnalysis: React.FC = () => {
           </button>
         </div>
       ) : (
-        <div className="text-center py-8">
+        <div className="text-center py-8">SELECT a.type, case when t.type ='exprense' -1*sum(t.amount) else sum(t.amount) end FROM spendme_accounts as a join spendme_transactions as t on t.account_id = a.id and t.user_id = a.user_id
+group by a.type
           <Bot className="h-12 w-12 text-gray-400 mx-auto mb-4" />
           <p className="text-gray-600 dark:text-gray-400 mb-4">
             Harcama analizi için AI'yı çalıştırın

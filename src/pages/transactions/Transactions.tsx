@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Filter, Search, MoreVertical, RefreshCw, Edit, Trash2, X, ArrowRight, CreditCard } from 'lucide-react';
+import { Plus, Search, RefreshCw, Edit, Trash2, X, ArrowRight, CreditCard } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { formatCurrency, formatDate } from '../../utils/dummyData';
 import { useAuth } from '../../contexts/AuthContext';
