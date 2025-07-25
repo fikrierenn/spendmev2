@@ -4,13 +4,33 @@ import './index.css';
 import App from './App';
 import reportWebVitals from './reportWebVitals';
 
+// ResizeObserver ve diğer non-critical hataları yakala ve bastır
+const originalError = console.error;
+console.error = (...args) => {
+  const errorMessage = args[0];
+  
+  // ResizeObserver hatasını bastır
+  if (typeof errorMessage === 'string' && errorMessage.includes('ResizeObserver loop completed with undelivered notifications')) {
+    return;
+  }
+  
+  // Diğer hataları normal şekilde göster
+  originalError.apply(console, args);
+};
+
+// Global error handler
+window.addEventListener('error', (event) => {
+  if (event.message.includes('ResizeObserver loop completed with undelivered notifications')) {
+    event.preventDefault();
+    return false;
+  }
+});
+
 const root = ReactDOM.createRoot(
   document.getElementById('root') as HTMLElement
 );
 root.render(
-  <React.StrictMode>
     <App />
-  </React.StrictMode>
 );
 
 // If you want to start measuring performance in your app, pass a function
