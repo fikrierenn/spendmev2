@@ -30,8 +30,10 @@ const queryClient = new QueryClient();
 register();
 
 function App() {
-  // GitHub Pages için basename ayarı
-  const basename = process.env.NODE_ENV === 'production' && window.location.hostname === 'fikrierenn.github.io' 
+  // Sadece GitHub Pages için basename ayarı (Netlify için boş)
+  const basename = process.env.NODE_ENV === 'production' && 
+    window.location.hostname === 'fikrierenn.github.io' && 
+    window.location.pathname.startsWith('/spendmev2')
     ? '/spendmev2' 
     : '';
 
