@@ -40,53 +40,41 @@ const AIAnalysis: React.FC = () => {
   };
 
   const generateAnalysis = async () => {
+    console.log('🔍 AI Analizi başlatılıyor...');
+    console.log('👤 Kullanıcı:', user?.id);
+    console.log('📊 İşlem sayısı:', transactions.length);
+    
     if (!GeminiService.isConfigured()) {
+      console.log('❌ Gemini AI yapılandırılmamış');
       toast.error('Gemini AI yapılandırılmamış');
       return;
     }
 
     if (transactions.length === 0) {
+      console.log('❌ Analiz için işlem bulunamadı');
       toast.error('Analiz için işlem bulunamadı');
       return;
     }
 
+    console.log('📋 İşlemler:', transactions.slice(0, 3)); // İlk 3 işlemi göster
+
     setLoading(true);
     try {
-      // Önce SQL sorgusu ile hesap türlerine göre toplam tutarları alalım
-      const { data: accountTotals, error: sqlError } = await supabase
-        .rpc('execute_sql', {
-          query: `
-            SELECT a.type, 
-            CASE 
-              WHEN t.type = 'expense' THEN -1 * SUM(t.amount) 
-              ELSE SUM(t.amount) 
-            END as total
-            FROM spendme_accounts as a
-            JOIN spendme_transactions as t 
-              ON t.account_id = a.id AND t.user_id = a.user_id
-            WHERE a.user_id = '${user?.id}'
-            GROUP BY a.type, t.type
-            ORDER BY a.type, t.type
-            LIMIT 100;
-          `
-        });
-
-      if (sqlError) {
-        console.error('SQL Error:', sqlError);
-        // SQL hatası varsa normal analizi yapalım
-        const analysis = await GeminiService.analyzeSpending(transactions);
-        setAnalysisData(analysis);
-      } else {
-        // SQL sonuçlarını da AI analizine ekleyelim
-        console.log('Account totals from SQL:', accountTotals);
-        const analysis = await GeminiService.analyzeSpending(transactions);
-        setAnalysisData(analysis);
-      }
-      
+      console.log('🤖 Gemini AI analizi başlatılıyor...');
+      const analysis = await GeminiService.analyzeSpending(transactions);
+      console.log('✅ AI Analizi sonucu:', analysis);
+      setAnalysisData(analysis);
       toast.success('AI analizi tamamlandı!');
     } catch (error) {
-      console.error('AI analysis error:', error);
+      console.error('❌ AI analysis error:', error);
       toast.error('AI analizi sırasında hata oluştu');
+      
+      // Hata durumunda varsayılan analiz göster
+      setAnalysisData({
+        analysis: 'Analiz sırasında bir hata oluştu. Lütfen tekrar deneyin.',
+        insights: ['API bağlantısında sorun olabilir', 'İnternet bağlantınızı kontrol edin'],
+        recommendations: ['Sayfayı yenileyin', 'Daha sonra tekrar deneyin']
+      });
     } finally {
       setLoading(false);
     }
