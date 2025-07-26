@@ -1,5 +1,5 @@
 [build]
-  command = "npm run build:netlify"
+  command = "CI=false GENERATE_SOURCEMAP=false PUBLIC_URL=. npm run build"
   publish = "build"
 
 [[redirects]]
