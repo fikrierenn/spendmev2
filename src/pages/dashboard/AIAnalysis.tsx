@@ -52,8 +52,37 @@ const AIAnalysis: React.FC = () => {
 
     setLoading(true);
     try {
-      const analysis = await GeminiService.analyzeSpending(transactions);
-      setAnalysisData(analysis);
+      // Önce SQL sorgusu ile hesap türlerine göre toplam tutarları alalım
+      const { data: accountTotals, error: sqlError } = await supabase
+        .rpc('execute_sql', {
+          query: `
+            SELECT a.type, 
+            CASE 
+              WHEN t.type = 'expense' THEN -1 * SUM(t.amount) 
+              ELSE SUM(t.amount) 
+            END as total
+            FROM spendme_accounts as a
+            JOIN spendme_transactions as t 
+              ON t.account_id = a.id AND t.user_id = a.user_id
+            WHERE a.user_id = '${user?.id}'
+            GROUP BY a.type, t.type
+            ORDER BY a.type, t.type
+            LIMIT 100;
+          `
+        });
+
+      if (sqlError) {
+        console.error('SQL Error:', sqlError);
+        // SQL hatası varsa normal analizi yapalım
+        const analysis = await GeminiService.analyzeSpending(transactions);
+        setAnalysisData(analysis);
+      } else {
+        // SQL sonuçlarını da AI analizine ekleyelim
+        console.log('Account totals from SQL:', accountTotals);
+        const analysis = await GeminiService.analyzeSpending(transactions);
+        setAnalysisData(analysis);
+      }
+      
       toast.success('AI analizi tamamlandı!');
     } catch (error) {
       console.error('AI analysis error:', error);
@@ -201,8 +230,21 @@ const AIAnalysis: React.FC = () => {
           </button>
         </div>
       ) : (
-        <div className="text-center py-8">SELECT a.type, case when t.type ='exprense' -1*sum(t.amount) else sum(t.amount) end FROM spendme_accounts as a join spendme_transactions as t on t.account_id = a.id and t.user_id = a.user_id
-group by a.type
+        <div className="text-center py-8">
+          <div className="bg-gray-100 dark:bg-gray-800 rounded-lg p-4 mb-4 text-left">
+            <code className="text-xs text-gray-700 dark:text-gray-300">
+              SELECT a.type, 
+              CASE 
+                WHEN t.type = 'expense' THEN -1 * SUM(t.amount) 
+                ELSE SUM(t.amount) 
+              END as total
+              FROM spendme_accounts as a
+              JOIN spendme_transactions as t 
+                ON t.account_id = a.id AND t.user_id = a.user_id
+              GROUP BY a.type, t.type
+              LIMIT 100;
+            </code>
+          </div>
           <Bot className="h-12 w-12 text-gray-400 mx-auto mb-4" />
           <p className="text-gray-600 dark:text-gray-400 mb-4">
             Harcama analizi için AI'yı çalıştırın
