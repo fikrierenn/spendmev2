@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { Suspense, lazy } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Toaster } from 'react-hot-toast';
@@ -14,8 +14,9 @@ import Settings from './pages/settings/Settings';
 import Profile from './pages/profile/Profile';
 import Login from './pages/auth/Login';
 import AILogin from './pages/auth/AILogin';
-import AIAddTransaction from './pages/transactions/AIAddTransaction';
-import TransferTransaction from './pages/transactions/TransferTransaction';
+// Lazy loading for large components
+const AIAddTransaction = lazy(() => import('./pages/transactions/AIAddTransaction'));
+const TransferTransaction = lazy(() => import('./pages/transactions/TransferTransaction'));
 import SupabaseTest from './components/SupabaseTest';
 import TestPage from './pages/TestPage';
 import PWAInstallBanner from './components/ui/PWAInstallBanner';
@@ -51,8 +52,30 @@ function App() {
               <Route path="/" element={<Navigate to="/dashboard" replace />} />
               <Route path="dashboard" element={<Dashboard />} />
               <Route path="transactions" element={<Transactions />} />
-              <Route path="transactions/add" element={<AIAddTransaction />} />
-              <Route path="transactions/transfer" element={<TransferTransaction />} />
+              <Route path="transactions/add" element={
+                <Suspense fallback={
+                  <div className="flex items-center justify-center min-h-[400px]">
+                    <div className="text-center">
+                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
+                      <p className="text-gray-600">AI İşlem Ekleme yükleniyor...</p>
+                    </div>
+                  </div>
+                }>
+                  <AIAddTransaction />
+                </Suspense>
+              } />
+              <Route path="transactions/transfer" element={
+                <Suspense fallback={
+                  <div className="flex items-center justify-center min-h-[400px]">
+                    <div className="text-center">
+                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
+                      <p className="text-gray-600">Transfer İşlemi yükleniyor...</p>
+                    </div>
+                  </div>
+                }>
+                  <TransferTransaction />
+                </Suspense>
+              } />
               <Route path="categories" element={<Categories />} />
               <Route path="accounts" element={<Accounts />} />
               <Route path="budgets" element={<Budgets />} />

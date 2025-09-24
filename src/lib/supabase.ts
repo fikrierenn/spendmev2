@@ -1,11 +1,18 @@
 import { createClient } from '@supabase/supabase-js';
 
-// Supabase configuration - hardcoded for development
-const supabaseUrl = 'https://rgvegoevmdayjszwgxph.supabase.co';
-const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJndmVnb2V2bWRheWpzendneHBoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDc4MzU3MzUsImV4cCI6MjA2MzQxMTczNX0.5tpoLHj0vEpfEwtJ9-oIF341Cv9fBOo6DBn3wbGl9x8';
+// Supabase configuration - environment variables kullan
+const supabaseUrl = process.env.REACT_APP_SUPABASE_URL || 'https://rgvegoevmdayjszwgxph.supabase.co';
+const supabaseAnonKey = process.env.REACT_APP_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJndmVnb2V2bWRheWpzendneHBoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDc4MzU3MzUsImV4cCI6MjA2MzQxMTczNX0.5tpoLHj0vEpfEwtJ9-oIF341Cv9fBOo6DBn3wbGl9x8';
 
-console.log('✅ Supabase configured with hardcoded credentials');
-console.log(supabaseUrl, supabaseAnonKey);
+// Development ortamında credentials kontrolü
+if (process.env.NODE_ENV === 'development') {
+  console.log('✅ Supabase configured with environment variables');
+  console.log('URL:', supabaseUrl);
+  console.log('Key:', supabaseAnonKey ? '✅ Mevcut' : '❌ Eksik');
+} else {
+  // Production'da credentials loglanmaz
+  console.log('✅ Supabase configured for production');
+}
 
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey);

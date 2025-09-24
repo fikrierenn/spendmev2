@@ -59,10 +59,19 @@ const Transactions: React.FC = () => {
   const [selectedAccountGroup, setSelectedAccountGroup] = useState<string | null>(null);
   const [showAccountSubcategories, setShowAccountSubcategories] = useState(false);
   
-  // Filter state
-  const [dateFilter, setDateFilter] = useState({
-    startDate: new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().slice(0, 10),
-    endDate: new Date().toISOString().slice(0, 10)
+  // Filter state - Türkiye zaman dilimi için düzeltildi
+  const [dateFilter, setDateFilter] = useState(() => {
+    const now = new Date();
+    const startDate = new Date(now.getFullYear(), now.getMonth(), 1);
+    startDate.setHours(3, 0, 0, 0); // Türkiye UTC+3
+    
+    const endDate = new Date();
+    endDate.setHours(23, 59, 59, 999); // Günün sonu
+    
+    return {
+      startDate: startDate.toISOString().slice(0, 10),
+      endDate: endDate.toISOString().slice(0, 10)
+    };
   });
   const [categoryFilter, setCategoryFilter] = useState<string>('');
   const [accountFilter, setAccountFilter] = useState<string>('');
@@ -73,6 +82,8 @@ const Transactions: React.FC = () => {
     const category = categories.find(cat => cat.id === categoryId);
     return category?.name || 'Bilinmeyen';
   };
+
+
 
   const getAccountName = (accountId: string): string => {
     const account = accounts.find(acc => acc.id === accountId);
@@ -95,23 +106,30 @@ const Transactions: React.FC = () => {
     if (TransactionService.isInstallmentTransaction(transaction)) {
       setIsInstallmentTransaction(true);
       
-      console.log('🔍 Taksitli işlem tespit edildi:', {
-        id: transaction.id,
-        description: transaction.description,
-        installments: transaction.installments,
-        installment_group_id: transaction.installment_group_id
-      });
+      // Development ortamında debug logları
+      if (process.env.NODE_ENV === 'development') {
+        console.log('🔍 Taksitli işlem tespit edildi:', {
+          id: transaction.id,
+          description: transaction.description,
+          installments: transaction.installments,
+          installment_group_id: transaction.installment_group_id
+        });
+      }
       
       try {
         // Eğer installment_group_id varsa, yeni yöntemi kullan
         if (transaction.installment_group_id) {
-          console.log('✅ Yeni yöntem kullanılıyor - installment_group_id:', transaction.installment_group_id);
+          if (process.env.NODE_ENV === 'development') {
+            console.log('✅ Yeni yöntem kullanılıyor - installment_group_id:', transaction.installment_group_id);
+          }
           const group = await TransactionService.getInstallmentGroup(
             user!.id,
             transaction.installment_group_id
           );
           
-          console.log('📊 Bulunan grup:', group);
+          if (process.env.NODE_ENV === 'development') {
+            console.log('📊 Bulunan grup:', group);
+          }
           
           if (group && group.length > 0) {
             setInstallmentGroup(group as Transaction[]);
@@ -121,7 +139,9 @@ const Transactions: React.FC = () => {
         }
         
         // Eski yöntem - geriye uyumluluk için
-        console.log('⚠️ Eski yöntem kullanılıyor - installment_group_id yok');
+        if (process.env.NODE_ENV === 'development') {
+          console.log('⚠️ Eski yöntem kullanılıyor - installment_group_id yok');
+        }
         const group = await TransactionService.getInstallmentGroupByFields(
           user!.id,
           transaction.description || '',
@@ -184,18 +204,20 @@ const Transactions: React.FC = () => {
         throw error;
       }
 
-      console.log('📊 Yüklenen işlemler:', {
-        toplamSayi: data?.length || 0,
-        taksitliIslemler: data?.filter(t => t.installments && t.installments > 1).length || 0,
-        normalIslemler: data?.filter(t => !t.installments || t.installments <= 1).length || 0,
-        ornekIslemler: data?.slice(0, 3).map(t => ({
-          id: t.id,
-          description: t.description,
-          amount: t.amount,
-          installments: t.installments,
-          installment_group_id: t.installment_group_id
-        }))
-      });
+      if (process.env.NODE_ENV === 'development') {
+        console.log('📊 Yüklenen işlemler:', {
+          toplamSayi: data?.length || 0,
+          taksitliIslemler: data?.filter(t => t.installments && t.installments > 1).length || 0,
+          normalIslemler: data?.filter(t => !t.installments || t.installments <= 1).length || 0,
+          ornekIslemler: data?.slice(0, 3).map(t => ({
+            id: t.id,
+            description: t.description,
+            amount: t.amount,
+            installments: t.installments,
+            installment_group_id: t.installment_group_id
+          }))
+        });
+      }
 
       setTransactions(data || []);
     } catch (err: any) {
@@ -312,12 +334,14 @@ const Transactions: React.FC = () => {
         currentDate.setMonth(currentDate.getMonth() - monthsToSubtract);
         displayDate = currentDate.toISOString().split('T')[0];
         
-        console.log('📅 Taksit tarihi hesaplanıyor:', {
-          secilenTaksitNo: transaction.installment_no,
-          secilenTarih: transaction.date,
-          hesaplananIlkTarih: displayDate,
-          aylarGeri: monthsToSubtract
-        });
+        if (process.env.NODE_ENV === 'development') {
+          console.log('📅 Taksit tarihi hesaplanıyor:', {
+            secilenTaksitNo: transaction.installment_no,
+            secilenTarih: transaction.date,
+            hesaplananIlkTarih: displayDate,
+            aylarGeri: monthsToSubtract
+          });
+        }
       }
     }
     
@@ -460,12 +484,14 @@ const Transactions: React.FC = () => {
     try {
       if (isInstallmentTransaction && editMode === 'all_installments') {
         // Yeni sistem: Tüm taksitleri sil ve yeniden oluştur
-        console.log('🔄 Taksitli işlem güncelleniyor:', {
-          installmentGroupId: selectedTransaction.installment_group_id,
-          toplamTutar: editForm.amount,
-          taksitSayisi: editForm.installments,
-          baslangicTarihi: editForm.date
-        });
+        if (process.env.NODE_ENV === 'development') {
+          console.log('🔄 Taksitli işlem güncelleniyor:', {
+            installmentGroupId: selectedTransaction.installment_group_id,
+            toplamTutar: editForm.amount,
+            taksitSayisi: editForm.installments,
+            baslangicTarihi: editForm.date
+          });
+        }
         
         // Taksitli işlemi güncelle (tüm taksitleri yeniden oluştur)
         await TransactionService.updateInstallmentTransaction(
@@ -545,8 +571,8 @@ const Transactions: React.FC = () => {
     
     const isVisible = matchesSearch && matchesDate && matchesType && matchesCategory && matchesAccount;
     
-    // Debug için taksit işlemlerini logla
-    if (transaction.installments && transaction.installments > 1) {
+    // Debug için taksit işlemlerini logla (sadece development'ta)
+    if (process.env.NODE_ENV === 'development' && transaction.installments && transaction.installments > 1) {
       console.log('🔍 Taksit işlemi filtreleniyor:', {
         id: transaction.id,
         description: transaction.description,
@@ -783,8 +809,17 @@ const Transactions: React.FC = () => {
         <div className="flex items-center justify-between text-sm text-gray-600 dark:text-gray-400">
           <span>
             {filteredTransactions.length} işlem bulundu
-            {(dateFilter.startDate !== new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().slice(0, 10) || 
-              dateFilter.endDate !== new Date().toISOString().slice(0, 10) || 
+            {(dateFilter.startDate !== (() => {
+              const now = new Date();
+              const startDate = new Date(now.getFullYear(), now.getMonth(), 1);
+              startDate.setHours(3, 0, 0, 0);
+              return startDate.toISOString().slice(0, 10);
+            })() || 
+              dateFilter.endDate !== (() => {
+                const endDate = new Date();
+                endDate.setHours(23, 59, 59, 999);
+                return endDate.toISOString().slice(0, 10);
+              })() || 
               typeFilter !== 'all' || 
               categoryFilter || 
               accountFilter) && (
@@ -793,15 +828,22 @@ const Transactions: React.FC = () => {
           </span>
           <button
             onClick={() => {
+              const now = new Date();
+              const startDate = new Date(now.getFullYear(), now.getMonth(), 1);
+              startDate.setHours(3, 0, 0, 0);
+              
+              const endDate = new Date();
+              endDate.setHours(23, 59, 59, 999);
+              
               setDateFilter({
-                startDate: new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().slice(0, 10),
-                endDate: new Date().toISOString().slice(0, 10)
+                startDate: startDate.toISOString().slice(0, 10),
+                endDate: endDate.toISOString().slice(0, 10)
               });
               setTypeFilter('all');
               setCategoryFilter('');
               setAccountFilter('');
             }}
-            className="text-blue-600 hover:text-blue-700 underline"
+            className="text-blue-700 underline"
           >
             Filtreleri Temizle
           </button>

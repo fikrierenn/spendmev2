@@ -10,7 +10,13 @@ interface DashboardStats {
   monthlyIncome: number;
   monthlyExpense: number;
   monthlyBalance: number;
+  // Hem aylık hem tüm zamanlar için kategoriler
   topCategories: Array<{
+    name: string;
+    value: number;
+    color: string;
+  }>;
+  topCategoriesAllTime: Array<{
     name: string;
     value: number;
     color: string;
@@ -40,6 +46,19 @@ interface DashboardStats {
     name: string;
     balance: number;
   }>;
+  // Hem aylık hem tüm zamanlar için ödeme yöntemleri
+  paymentMethods: Array<{
+    name: string;
+    value: number;
+    color: string;
+    icon: string;
+  }>;
+  paymentMethodsAllTime: Array<{
+    name: string;
+    value: number;
+    color: string;
+    icon: string;
+  }>;
 }
 
 export const useDashboard = () => {
@@ -55,13 +74,24 @@ export const useDashboard = () => {
       setLoading(true);
       setError(null);
 
-      // Get current month start and end dates
+      // Get current month start and end dates for monthly stats
       const now = new Date();
       const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
       const monthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0);
 
-      // Fetch transactions for current month (without joins first)
-      const { data: transactions, error: transactionsError } = await supabase
+      // Fetch ALL transactions (geçmiş veriler dahil) for total stats
+      const { data: allTransactions, error: allTransactionsError } = await supabase
+        .from('spendme_transactions')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false });
+
+      if (allTransactionsError) {
+        throw allTransactionsError;
+      }
+
+      // Fetch transactions for current month only (for monthly stats)
+      const { data: monthlyTransactions, error: monthlyTransactionsError } = await supabase
         .from('spendme_transactions')
         .select('*')
         .eq('user_id', user.id)
@@ -69,34 +99,68 @@ export const useDashboard = () => {
         .lte('date', monthEnd.toISOString().split('T')[0])
         .order('created_at', { ascending: false });
 
-      if (transactionsError) {
-        throw transactionsError;
+      if (monthlyTransactionsError) {
+        throw monthlyTransactionsError;
       }
 
-      // Calculate totals
-      const income = transactions?.filter(t => t.type === 'income') || [];
-      const expenses = transactions?.filter(t => t.type === 'expense') || [];
+      // Use allTransactions for total stats, monthlyTransactions for monthly stats
+      const transactions = allTransactions;
+      const monthlyTransactionsData = monthlyTransactions;
+
+      // Calculate TOTAL stats (tüm zamanlar)
+      const allIncome = transactions?.filter(t => t.type === 'income') || [];
+      const allExpenses = transactions?.filter(t => t.type === 'expense') || [];
       
-      const totalIncome = income.reduce((sum, t) => sum + (t.amount || 0), 0);
-      const totalExpense = expenses.reduce((sum, t) => sum + (t.amount || 0), 0);
+      const totalIncome = allIncome.reduce((sum, t) => sum + (t.amount || 0), 0);
+      const totalExpense = allExpenses.reduce((sum, t) => sum + (t.amount || 0), 0);
       const balance = totalIncome - totalExpense;
 
-      // Get category names for transactions
-      const categoryIds = Array.from(new Set(expenses.map(t => t.category_id)));
+      // Calculate MONTHLY stats (sadece bu ay)
+      const monthlyIncome = monthlyTransactionsData?.filter(t => t.type === 'income') || [];
+      const monthlyExpenses = monthlyTransactionsData?.filter(t => t.type === 'expense') || [];
+      
+      const monthlyIncomeTotal = monthlyIncome.reduce((sum, t) => sum + (t.amount || 0), 0);
+      const monthlyExpenseTotal = monthlyExpenses.reduce((sum, t) => sum + (t.amount || 0), 0);
+      const monthlyBalance = monthlyIncomeTotal - monthlyExpenseTotal;
+
+      // Get category names for transactions (hem bu ay hem tüm zamanlar için)
+      const allCategoryIds = Array.from(new Set(allExpenses.map(t => t.category_id)));
+      const monthlyCategoryIds = Array.from(new Set(monthlyExpenses.map(t => t.category_id)));
+      
+      // Tüm kategori ID'lerini birleştir ve tekrarları kaldır
+      const allUniqueCategoryIds = Array.from(new Set([...allCategoryIds, ...monthlyCategoryIds]));
+      
       const { data: categories } = await supabase
         .from('spendme_categories')
         .select('id, name')
-        .in('id', categoryIds);
+        .in('id', allUniqueCategoryIds);
 
-      // Get top categories
-      const categoryTotals: { [key: string]: number } = {};
-      expenses.forEach(transaction => {
+      // Get top categories (bu ay)
+      const monthlyCategoryTotals: { [key: string]: number } = {};
+      monthlyExpenses.forEach(transaction => {
         const category = categories?.find(c => c.id === transaction.category_id);
         const categoryName = category?.name || 'Bilinmeyen';
-        categoryTotals[categoryName] = (categoryTotals[categoryName] || 0) + (transaction.amount || 0);
+        monthlyCategoryTotals[categoryName] = (monthlyCategoryTotals[categoryName] || 0) + (transaction.amount || 0);
       });
 
-      const topCategories = Object.entries(categoryTotals)
+      const topCategories = Object.entries(monthlyCategoryTotals)
+        .map(([name, value]) => ({
+          name,
+          value,
+          color: getRandomColor(name)
+        }))
+        .sort((a, b) => b.value - a.value)
+        .slice(0, 5);
+
+      // Get top categories (tüm zamanlar)
+      const allTimeCategoryTotals: { [key: string]: number } = {};
+      allExpenses.forEach(transaction => {
+        const category = categories?.find(c => c.id === transaction.category_id);
+        const categoryName = category?.name || 'Bilinmeyen';
+        allTimeCategoryTotals[categoryName] = (allTimeCategoryTotals[categoryName] || 0) + (transaction.amount || 0);
+      });
+
+      const topCategoriesAllTime = Object.entries(allTimeCategoryTotals)
         .map(([name, value]) => ({
           name,
           value,
@@ -126,7 +190,8 @@ export const useDashboard = () => {
         .in('id', budgetCategoryIds);
 
       const budgetStatus = budgets?.map(budget => {
-        const categoryExpenses = expenses.filter(t => t.category_id === budget.category_id);
+        // Bütçe durumu için sadece bu ayın harcamalarını kullan
+        const categoryExpenses = monthlyExpenses.filter(t => t.category_id === budget.category_id);
         const spentAmount = categoryExpenses.reduce((sum, t) => sum + (t.amount || 0), 0);
         const remainingAmount = (budget.amount || 0) - spentAmount;
         const percentageUsed = budget.amount ? (spentAmount / budget.amount) * 100 : 0;
@@ -204,20 +269,76 @@ export const useDashboard = () => {
       const totalCreditDebt = creditCards.reduce((sum, card) => sum + card.debt, 0);
       const totalCreditAvailable = creditCards.reduce((sum, card) => sum + card.available, 0);
 
+      // Ödeme yöntemlerine göre harcama dağılımı (bu ay)
+      const monthlyPaymentMethodTotals: { [key: string]: number } = {};
+      monthlyExpenses.forEach(transaction => {
+        const paymentMethod = transaction.payment_method || 'Bilinmeyen';
+        monthlyPaymentMethodTotals[paymentMethod] = (monthlyPaymentMethodTotals[paymentMethod] || 0) + (transaction.amount || 0);
+      });
+
+      // Ödeme yöntemlerine göre harcama dağılımı (tüm zamanlar)
+      const allTimePaymentMethodTotals: { [key: string]: number } = {};
+      allExpenses.forEach(transaction => {
+        const paymentMethod = transaction.payment_method || 'Bilinmeyen';
+        allTimePaymentMethodTotals[paymentMethod] = (allTimePaymentMethodTotals[paymentMethod] || 0) + (transaction.amount || 0);
+      });
+
+      // Ödeme yöntemlerini renk ve ikon ile birlikte hazırla
+      const paymentMethodIcons: { [key: string]: string } = {
+        'nakit': '💵',
+        'kredi kartı': '💳',
+        'banka kartı': '🏦',
+        'havale': '📤',
+        'eft': '📤',
+        'papel': '🧾',
+        'Bilinmeyen': '❓'
+      };
+
+      const paymentMethodColors: { [key: string]: string } = {
+        'nakit': '#10B981',      // Yeşil
+        'kredi kartı': '#3B82F6', // Mavi
+        'banka kartı': '#8B5CF6', // Mor
+        'havale': '#F59E0B',     // Turuncu
+        'eft': '#EF4444',        // Kırmızı
+        'papel': '#6366F1',      // İndigo
+        'Bilinmeyen': '#6B7280'  // Gri
+      };
+
+      const paymentMethods = Object.entries(monthlyPaymentMethodTotals)
+        .map(([name, value]) => ({
+          name: name.charAt(0).toUpperCase() + name.slice(1), // İlk harfi büyük yap
+          value,
+          color: paymentMethodColors[name] || paymentMethodColors['Bilinmeyen'],
+          icon: paymentMethodIcons[name] || paymentMethodIcons['Bilinmeyen']
+        }))
+        .sort((a, b) => b.value - a.value); // En yüksek tutardan sırala
+
+      const paymentMethodsAllTime = Object.entries(allTimePaymentMethodTotals)
+        .map(([name, value]) => ({
+          name: name.charAt(0).toUpperCase() + name.slice(1), // İlk harfi büyük yap
+          value,
+          color: paymentMethodColors[name] || paymentMethodColors['Bilinmeyen'],
+          icon: paymentMethodIcons[name] || paymentMethodIcons['Bilinmeyen']
+        }))
+        .sort((a, b) => b.value - a.value); // En yüksek tutardan sırala
+
       const dashboardStats: DashboardStats = {
         totalIncome,
         totalExpense,
         balance,
-        monthlyIncome: totalIncome,
-        monthlyExpense: totalExpense,
-        monthlyBalance: balance,
+        monthlyIncome: monthlyIncomeTotal,
+        monthlyExpense: monthlyExpenseTotal,
+        monthlyBalance: monthlyBalance,
         topCategories,
+        topCategoriesAllTime,
         recentTransactions,
         budgetStatus,
         walletTotal,
         bankTotal,
         creditCards,
-        bankAccounts: bankAccountsDetails
+        bankAccounts: bankAccountsDetails,
+        paymentMethods,
+        paymentMethodsAllTime
       };
 
       setStats(dashboardStats);

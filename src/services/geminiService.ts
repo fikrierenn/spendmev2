@@ -17,8 +17,8 @@ interface GeminiResponse {
 }
 
 export class GeminiService {
-  private static API_KEY = process.env.REACT_APP_GEMINI_API_KEY || 'AIzaSyC5oKr0JpQHnQIKi3iZ3-ChlOEXKlcSiHw';
-  private static API_URL = process.env.REACT_APP_GEMINI_API_URL || 'https://generativelanguage.googleapis.com/v1/models/gemini-2.5-flash-lite-preview:generateContent';
+  private static API_KEY = process.env.REACT_APP_GEMINI_API_KEY;
+  private static API_URL = process.env.REACT_APP_GEMINI_API_URL || 'https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent';
 
   // Markdown formatını temizleyen yardımcı fonksiyon
   private static cleanGeminiResponse(response: string): string {
@@ -35,6 +35,16 @@ export class GeminiService {
     suggestions: string[];
   }> {
     try {
+      // API key kontrolü
+      if (!this.API_KEY) {
+        console.warn('⚠️ Gemini API key bulunamadı. Environment variable kontrol edin.');
+        return {
+          category: 'Diğer',
+          confidence: 0.5,
+          suggestions: []
+        };
+      }
+
       const prompt = `
         Aşağıdaki işlem açıklamasını analiz ederek en uygun kategoriyi öner:
         

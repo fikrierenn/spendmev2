@@ -1,0 +1,270 @@
+# SpendMe v2 - Cursor Rules & Development Guidelines
+
+## 🏗️ Proje Mimarisi
+
+### Teknoloji Stack
+- **Frontend**: React 18 + TypeScript
+- **Backend**: Supabase (PostgreSQL + Auth + Storage)
+- **Styling**: Tailwind CSS
+- **State Management**: React Context + Custom Hooks
+- **Routing**: React Router DOM v6
+- **Build Tool**: Create React App (CRA)
+- **Package Manager**: npm
+
+### Klasör Yapısı
+```
+src/
+├── components/          # Yeniden kullanılabilir UI bileşenleri
+│   ├── auth/           # Kimlik doğrulama bileşenleri
+│   ├── charts/         # Grafik ve chart bileşenleri
+│   ├── forms/          # Form bileşenleri
+│   ├── layout/         # Layout ve navigasyon bileşenleri
+│   └── ui/             # Genel UI bileşenleri
+├── contexts/            # React Context'ler
+├── hooks/               # Custom React hooks
+├── lib/                 # Kütüphane konfigürasyonları
+├── pages/               # Sayfa bileşenleri
+│   ├── accounts/        # Hesap yönetimi
+│   ├── auth/            # Kimlik doğrulama
+│   ├── budgets/         # Bütçe yönetimi
+│   ├── categories/      # Kategori yönetimi
+│   ├── dashboard/       # Ana dashboard
+│   ├── profile/         # Kullanıcı profili
+│   ├── reports/         # Raporlar
+│   ├── settings/        # Ayarlar
+│   └── transactions/    # İşlem yönetimi
+├── services/            # API ve servis katmanı
+├── stores/              # State store'ları
+├── types/               # TypeScript tip tanımları
+└── utils/               # Yardımcı fonksiyonlar
+```
+
+## 📝 Kodlama Standartları
+
+### TypeScript Kuralları
+- **Strict Mode**: Tüm TypeScript strict ayarları aktif
+- **Tip Tanımları**: Her bileşen ve fonksiyon için tip tanımı zorunlu
+- **Interface Kullanımı**: Props ve state için interface kullan
+- **Generic Types**: Mümkün olduğunda generic type'lar kullan
+
+### React Kuralları
+- **Functional Components**: Sadece functional component'ler kullan
+- **Hooks**: Custom hook'lar için `use` prefix'i zorunlu
+- **Performance**: `useCallback`, `useMemo` kullanarak gereksiz re-render'ları önle
+- **State Management**: Local state için `useState`, global state için Context kullan
+
+### Naming Conventions
+- **Components**: PascalCase (örn: `TransactionList`)
+- **Functions**: camelCase (örn: `handleTransactionDelete`)
+- **Constants**: UPPER_SNAKE_CASE (örn: `MAX_TRANSACTIONS`)
+- **Files**: kebab-case (örn: `transaction-list.tsx`)
+- **Database Tables**: `spendme_` prefix'i ile başla
+
+## 🎨 UI/UX Kuralları
+
+### Tailwind CSS
+- **Responsive Design**: `sm:`, `md:`, `lg:` prefix'lerini kullan
+- **Dark Mode**: `dark:` prefix'i ile dark mode desteği ekle
+- **Component Classes**: Ortak component'ler için `card`, `input`, `button` class'ları kullan
+- **Color System**: Proje renk paletini kullan (success, danger, warning, info)
+
+### Accessibility
+- **Semantic HTML**: Uygun HTML tag'lerini kullan
+- **ARIA Labels**: Screen reader desteği için ARIA attribute'ları ekle
+- **Keyboard Navigation**: Tab navigation desteği sağla
+- **Color Contrast**: WCAG AA standartlarına uygun renk kontrastı
+
+## 🔐 Güvenlik Kuralları
+
+### Supabase Güvenliği
+- **RLS Policies**: Tüm tablolar için Row Level Security aktif
+- **User Isolation**: Kullanıcılar sadece kendi verilerine erişebilir
+- **Input Validation**: Tüm kullanıcı girdilerini validate et
+- **SQL Injection**: Parametrized query'ler kullan
+
+### Authentication
+- **Protected Routes**: Hassas sayfalar için `ProtectedRoute` kullan
+- **Session Management**: Supabase auth session'larını doğru yönet
+- **Error Handling**: Auth hatalarını kullanıcı dostu şekilde göster
+
+## 🚀 Performance Kuralları
+
+### Optimization
+- **Lazy Loading**: Route bazlı code splitting kullan
+- **Memoization**: `useMemo` ve `useCallback` ile gereksiz hesaplamaları önle
+- **Pagination**: Büyük veri setleri için pagination kullan
+- **Caching**: Supabase cache ve local cache kullan
+
+### Bundle Size
+- **Tree Shaking**: Kullanılmayan import'ları kaldır
+- **Dynamic Imports**: Büyük bileşenleri lazy load et
+- **Image Optimization**: WebP formatı ve responsive images kullan
+
+## 🧪 Test ve Quality
+
+### Code Quality
+- **ESLint**: Tüm ESLint kurallarına uy
+- **Prettier**: Kod formatlaması için Prettier kullan
+- **Type Safety**: TypeScript strict mode'da hata vermeyecek kod yaz
+- **Error Boundaries**: React Error Boundary'ler kullan
+
+### Testing
+- **Unit Tests**: Kritik fonksiyonlar için unit test yaz
+- **Integration Tests**: API entegrasyonları için test yaz
+- **E2E Tests**: Kullanıcı senaryoları için E2E test yaz
+
+## 📱 Mobile First Approach
+
+### Responsive Design
+- **Mobile First**: Önce mobile tasarım, sonra desktop
+- **Touch Friendly**: Touch target'lar minimum 44x44px
+- **Gesture Support**: Swipe ve pinch gesture'ları destekle
+- **Performance**: Mobile cihazlarda optimize performans
+
+## 🌐 Internationalization
+
+### Localization
+- **Turkish Support**: Varsayılan dil Türkçe
+- **Currency**: TL (₺) para birimi kullan
+- **Date Format**: Türkiye tarih formatı (DD/MM/YYYY)
+- **Number Format**: Türkiye sayı formatı (1.234,56)
+
+## 🔄 State Management
+
+### Context Pattern
+- **AuthContext**: Kullanıcı kimlik doğrulama durumu
+- **ThemeContext**: Dark/Light mode durumu
+- **Global State**: Uygulama geneli state'ler için Context kullan
+- **Local State**: Component bazlı state'ler için useState kullan
+
+### Data Flow
+- **Top-Down**: Props ile veri aktarımı
+- **Bottom-Up**: Callback fonksiyonları ile event handling
+- **Context**: Global state için Context API kullan
+- **Services**: API çağrıları için service layer kullan
+
+## 📊 Database Design
+
+### Table Structure
+- **Naming**: `spendme_` prefix'i ile başla
+- **Relationships**: Foreign key'ler ile ilişkileri tanımla
+- **Indexes**: Performans için gerekli index'leri ekle
+- **Constraints**: Data integrity için constraint'ler ekle
+
+### Data Types
+- **UUID**: Primary key'ler için UUID kullan
+- **Timestamps**: `created_at`, `updated_at` alanları zorunlu
+- **Soft Delete**: Silinen kayıtlar için soft delete kullan
+- **Audit Trail**: Önemli değişiklikler için audit log tut
+
+## 🚨 Error Handling
+
+### Error Patterns
+- **Try-Catch**: Async işlemler için try-catch kullan
+- **Error Boundaries**: React component hatalarını yakala
+- **User Feedback**: Hataları kullanıcı dostu şekilde göster
+- **Logging**: Hataları console'a logla (production'da kaldır)
+
+### Validation
+- **Input Validation**: Tüm kullanıcı girdilerini validate et
+- **Form Validation**: Form validation için react-hook-form kullan
+- **API Validation**: API response'larını validate et
+- **Type Validation**: TypeScript ile compile-time validation
+
+## 📝 Documentation
+
+### Code Documentation
+- **JSDoc**: Fonksiyonlar için JSDoc comment'leri ekle
+- **README**: Proje setup ve kullanım talimatları
+- **API Docs**: API endpoint'leri için dokümantasyon
+- **Component Docs**: Bileşen kullanım örnekleri
+
+### Commit Messages
+- **Conventional Commits**: `feat:`, `fix:`, `docs:` prefix'leri kullan
+- **Descriptive**: Commit mesajlarında ne yapıldığını açıkla
+- **Turkish**: Türkçe commit mesajları kullan
+- **Reference**: Issue/PR referansları ekle
+
+## 🔧 Development Workflow
+
+### Git Workflow
+- **Feature Branches**: Yeni özellikler için feature branch'leri kullan
+- **Pull Requests**: Code review için PR'lar oluştur
+- **Squash Commits**: Feature branch'leri squash merge et
+- **Clean History**: Git history'yi temiz tut
+
+### Environment
+- **Environment Variables**: Hassas bilgileri .env dosyasında tut
+- **Configuration**: Farklı environment'lar için config dosyaları
+- **Secrets**: API key'leri ve secret'ları Git'e commit etme
+- **Local Development**: Local development için gerekli setup
+
+## 🎯 Business Logic
+
+### Financial Rules
+- **Currency**: TL (₺) para birimi kullan
+- **Decimal Precision**: Para işlemleri için 2 decimal precision
+- **Installments**: Taksitli işlemler için installment logic
+- **Balance Calculation**: Hesap bakiyelerini doğru hesapla
+
+### User Experience
+- **Onboarding**: Yeni kullanıcılar için setup wizard
+- **Progressive Disclosure**: Karmaşık özellikleri aşamalı göster
+- **Feedback**: Kullanıcı aksiyonları için immediate feedback
+- **Loading States**: Uzun süren işlemler için loading indicator'lar
+
+## 🚀 Deployment
+
+### Build Process
+- **Environment**: Production build için environment variables
+- **Optimization**: Bundle size ve performance optimization
+- **Assets**: Static asset'leri optimize et
+- **CDN**: Static dosyalar için CDN kullan
+
+### Monitoring
+- **Error Tracking**: Production hatalarını track et
+- **Performance**: Core Web Vitals'ı monitor et
+- **Analytics**: Kullanıcı davranışlarını analiz et
+- **Uptime**: Uygulama uptime'ını monitor et
+
+## 📋 Code Review Checklist
+
+### Before Commit
+- [ ] ESLint hataları düzeltildi
+- [ ] TypeScript hataları düzeltildi
+- [ ] Test'ler geçiyor
+- [ ] Code formatting düzeltildi
+- [ ] Gereksiz console.log'lar kaldırıldı
+- [ ] Performance issue'lar kontrol edildi
+- [ ] Security issue'lar kontrol edildi
+- [ ] Accessibility issue'lar kontrol edildi
+
+### Before PR
+- [ ] Feature branch güncel
+- [ ] Test coverage yeterli
+- [ ] Documentation güncellendi
+- [ ] Breaking changes belgelendi
+- [ ] Migration script'leri hazırlandı
+- [ ] Rollback plan'ı hazırlandı
+
+## 🎯 Dosya Değişiklik Kuralları
+
+### Sadece Gerekli Dosyalarda Değişiklik Yap
+- **Hedef Odaklı**: Sadece belirtilen görev için gerekli olan dosyalarda değişiklik yap
+- **Gereksiz Değişiklik**: Diğer dosyalarda otomatik olarak değişiklik yapma
+- **Minimal Impact**: Mümkün olduğunca az dosyada değişiklik yap
+- **Context Awareness**: Sadece mevcut konuyla ilgili dosyalarda çalış
+
+### Dosya Seçim Kriterleri
+- **Direct Dependencies**: Doğrudan ilgili olan dosyalar
+- **Import/Export**: Gerekli import/export bağlantıları
+- **Type Definitions**: Tip tanımları gerekli olan dosyalar
+- **Configuration**: Konfigürasyon değişikliği gerekli olan dosyalar
+
+### Yasaklı İşlemler
+- **Auto-formatting**: Tüm projeyi otomatik formatlama
+- **Bulk Changes**: Toplu dosya değişiklikleri
+- **Unrelated Files**: İlgisiz dosyalarda değişiklik
+- **Style Changes**: Sadece stil değişikliği için dosya açma
+
+Bu kurallar, SpendMe v2 projesinin tutarlı, güvenli ve performanslı bir şekilde geliştirilmesini sağlar. Tüm geliştiriciler bu kurallara uymalı ve gerektiğinde güncellemeler yapılmalıdır.

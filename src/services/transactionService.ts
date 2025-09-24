@@ -6,7 +6,12 @@ type TransactionInsert = Database['public']['Tables']['spendme_transactions']['I
 type TransactionUpdate = Database['public']['Tables']['spendme_transactions']['Update'];
 
 export class TransactionService {
-  // Get all transactions for a user
+  /**
+   * Kullanıcının tüm işlemlerini getirir
+   * @param userId - Kullanıcı ID'si
+   * @returns Promise<Transaction[]> - İşlem listesi
+   * @throws Error - API hatası durumunda
+   */
   static async getTransactions(userId: string): Promise<Transaction[]> {
     const { data, error } = await supabase
       .from('spendme_transactions')
@@ -25,7 +30,19 @@ export class TransactionService {
     return data || [];
   }
 
-  // Get transactions with filters
+  /**
+   * Filtrelerle işlemleri getirir
+   * @param userId - Kullanıcı ID'si
+   * @param filters - Filtre parametreleri
+   * @param filters.type - İşlem türü (income/expense/transfer)
+   * @param filters.category_id - Kategori ID'si
+   * @param filters.account_id - Hesap ID'si
+   * @param filters.start_date - Başlangıç tarihi
+   * @param filters.end_date - Bitiş tarihi
+   * @param filters.search - Arama terimi
+   * @returns Promise<Transaction[]> - Filtrelenmiş işlem listesi
+   * @throws Error - API hatası durumunda
+   */
   static async getTransactionsWithFilters(
     userId: string,
     filters: {
@@ -75,7 +92,12 @@ export class TransactionService {
     return data || [];
   }
 
-  // Get transaction by ID
+  /**
+   * ID ile işlem getirir
+   * @param id - İşlem ID'si
+   * @returns Promise<Transaction | null> - İşlem veya null
+   * @throws Error - API hatası durumunda
+   */
   static async getTransaction(id: string): Promise<Transaction | null> {
     const { data, error } = await supabase
       .from('spendme_transactions')

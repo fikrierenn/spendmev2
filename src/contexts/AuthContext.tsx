@@ -54,7 +54,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const loadUserProfile = async (userId: string) => {
     try {
-      console.log('Loading profile for user:', userId);
+      if (process.env.NODE_ENV === 'development') {
+        console.log('Loading profile for user:', userId);
+      }
       
       // Add timeout to prevent hanging
       const timeoutPromise = new Promise((_, reject) => {
@@ -69,12 +71,16 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
       const { data, error } = await Promise.race([profilePromise, timeoutPromise]) as any;
 
-      console.log('Profile load result:', { data, error });
+      if (process.env.NODE_ENV === 'development') {
+        console.log('Profile load result:', { data, error });
+      }
 
       // 406 hatası genellikle RLS politikası sorunu, bu durumda profile'ı null olarak ayarla
       if (error) {
         if (error.code === 'PGRST116' || error.code === '406') {
-          console.log('Profile not found or access denied, setting to null');
+          if (process.env.NODE_ENV === 'development') {
+            console.log('Profile not found or access denied, setting to null');
+          }
           setUserProfile(null);
           return;
         }
@@ -102,14 +108,33 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           security_alerts: data.security_alerts ?? true,
           marketing_emails: data.marketing_emails ?? false
         };
-        console.log('Setting user profile:', profile);
+        if (process.env.NODE_ENV === 'development') {
+          console.log('Setting user profile:', profile);
+        }
         setUserProfile(profile);
       } else {
-        console.log('No profile data found, setting to null');
+        if (process.env.NODE_ENV === 'development') {
+          console.log('No profile data found, setting to null');
+        }
         setUserProfile(null);
       }
     } catch (error) {
-      console.error('Profile load error:', error);
+      // Detaylı error handling
+      if (error instanceof Error) {
+        console.error('Profile load error:', {
+          message: error.message,
+          name: error.name,
+          stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+        });
+      } else {
+        console.error('Profile load error (unknown type):', error);
+      }
+      
+      // User-friendly error message
+      if (process.env.NODE_ENV === 'development') {
+        console.warn('Profile yüklenemedi, varsayılan değerler kullanılıyor');
+      }
+      
       setUserProfile(null);
     }
   };
@@ -118,8 +143,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     if (!user) return { error: new Error('User not authenticated') };
 
     try {
-      console.log('Updating profile for user:', user.id);
-      console.log('Profile data:', profile);
+      if (process.env.NODE_ENV === 'development') {
+        console.log('Updating profile for user:', user.id);
+        console.log('Profile data:', profile);
+      }
       
       const { data: existingData } = await supabase
         .from('spendme_user_profiles')
@@ -127,19 +154,25 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         .eq('user_id', user.id)
         .single();
 
-      console.log('Existing data:', existingData);
+      if (process.env.NODE_ENV === 'development') {
+        console.log('Existing data:', existingData);
+      }
 
       let result;
       if (existingData) {
         // Update existing profile
-        console.log('Updating existing profile...');
+        if (process.env.NODE_ENV === 'development') {
+          console.log('Updating existing profile...');
+        }
         result = await supabase
           .from('spendme_user_profiles')
           .update(profile)
           .eq('user_id', user.id);
       } else {
         // Insert new profile
-        console.log('Inserting new profile...');
+        if (process.env.NODE_ENV === 'development') {
+          console.log('Inserting new profile...');
+        }
         result = await supabase
           .from('spendme_user_profiles')
           .insert({
@@ -148,10 +181,18 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           });
       }
 
-      console.log('Result:', result);
+      if (process.env.NODE_ENV === 'development') {
+        console.log('Result:', result);
+      }
 
       if (result.error) {
-        console.error('Profile update error:', result.error);
+        // Detaylı error logging
+        console.error('Profile update error:', {
+          message: result.error.message,
+          code: result.error.code,
+          details: result.error.details,
+          hint: result.error.hint
+        });
         return { error: result.error };
       }
 
@@ -159,7 +200,16 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       await refreshUserProfile();
       return { error: null };
     } catch (error: any) {
-      console.error('Profile update exception:', error);
+      // Detaylı error handling
+      if (error instanceof Error) {
+        console.error('Profile update exception:', {
+          message: error.message,
+          name: error.name,
+          stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+        });
+      } else {
+        console.error('Profile update exception (unknown type):', error);
+      }
       return { error };
     }
   };
@@ -168,7 +218,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     if (!user) return { error: new Error('User not authenticated') };
 
     try {
-      console.log('Uploading profile photo for user:', user.id);
+      if (process.env.NODE_ENV === 'development') {
+        console.log('Uploading profile photo for user:', user.id);
+      }
       
       // Upload to Supabase Storage
       const publicUrl = await uploadProfilePhoto(file, user.id);
@@ -177,7 +229,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         throw new Error('Failed to upload profile photo');
       }
 
-      console.log('Photo uploaded, public URL:', publicUrl);
+      if (process.env.NODE_ENV === 'development') {
+        console.log('Photo uploaded, public URL:', publicUrl);
+      }
 
       // Update profile with new avatar URL
       const { error: updateError } = await updateUserProfile({
@@ -188,12 +242,23 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         throw updateError;
       }
 
-      console.log('Profile updated with new avatar URL:', publicUrl);
-      console.log('Current userProfile after update:', userProfile);
+      if (process.env.NODE_ENV === 'development') {
+        console.log('Profile updated with new avatar URL:', publicUrl);
+        console.log('Current userProfile after update:', userProfile);
+      }
 
       return { error: null };
     } catch (error: any) {
-      console.error('Profile photo update error:', error);
+      // Detaylı error handling
+      if (error instanceof Error) {
+        console.error('Profile photo update error:', {
+          message: error.message,
+          name: error.name,
+          stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+        });
+      } else {
+        console.error('Profile photo update error (unknown type):', error);
+      }
       return { error };
     }
   };
@@ -213,18 +278,35 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     // Get initial session
     const getInitialSession = async () => {
       try {
-        console.log('🔍 Getting initial session...');
+        if (process.env.NODE_ENV === 'development') {
+          console.log('🔍 Getting initial session...');
+        }
         const { data: { session } } = await supabase.auth.getSession();
-        console.log('🔍 Session:', session);
+        if (process.env.NODE_ENV === 'development') {
+          console.log('🔍 Session:', session);
+        }
         if (isMounted && session?.user) {
-          console.log('✅ User authenticated:', session.user.email);
+          if (process.env.NODE_ENV === 'development') {
+            console.log('✅ User authenticated:', session.user.email);
+          }
           setUser(session.user);
           await loadUserProfile(session.user.id);
         } else {
-          console.log('❌ No user in session');
+          if (process.env.NODE_ENV === 'development') {
+            console.log('❌ No user in session');
+          }
         }
       } catch (error) {
-        console.error('❌ Initial session error:', error);
+        // Detaylı error handling
+        if (error instanceof Error) {
+          console.error('❌ Initial session error:', {
+            message: error.message,
+            name: error.name,
+            stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+          });
+        } else {
+          console.error('❌ Initial session error (unknown type):', error);
+        }
       } finally {
         if (isMounted) {
           setLoading(false);
@@ -241,19 +323,34 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event: any, session: any) => {
         try {
-          console.log('🔄 Auth state change:', event, session?.user?.email);
+          if (process.env.NODE_ENV === 'development') {
+            console.log('🔄 Auth state change:', event, session?.user?.email);
+          }
           clearTimeout(timeoutId);
           if (isMounted && session?.user) {
-            console.log('✅ Auth state change - User authenticated:', session.user.email);
+            if (process.env.NODE_ENV === 'development') {
+              console.log('✅ Auth state change - User authenticated:', session.user.email);
+            }
             setUser(session.user);
             await loadUserProfile(session.user.id);
           } else {
-            console.log('❌ Auth state change - No user');
+            if (process.env.NODE_ENV === 'development') {
+              console.log('❌ Auth state change - No user');
+            }
             setUser(null);
             setUserProfile(null);
           }
         } catch (error) {
-          console.error('❌ Auth state change error:', error);
+          // Detaylı error handling
+          if (error instanceof Error) {
+            console.error('❌ Auth state change error:', {
+              message: error.message,
+              name: error.name,
+              stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+            });
+          } else {
+            console.error('❌ Auth state change error (unknown type):', error);
+          }
         } finally {
           if (isMounted) {
             setLoading(false);
@@ -269,22 +366,30 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   }, []);
 
   const signIn = async (email: string, password: string) => {
-    console.log('🔐 Attempting sign in with:', { email, password: '***' });
+    if (process.env.NODE_ENV === 'development') {
+      console.log('🔐 Attempting sign in with:', { email, password: '***' });
+    }
     const { error } = await supabase.auth.signInWithPassword({
       email,
       password,
     });
-    console.log('🔐 Sign in result:', { error: error?.message });
+    if (process.env.NODE_ENV === 'development') {
+      console.log('🔐 Sign in result:', { error: error?.message });
+    }
     return { error };
   };
 
   const signUp = async (email: string, password: string) => {
-    console.log('📝 Attempting sign up with:', { email, password: '***' });
+    if (process.env.NODE_ENV === 'development') {
+      console.log('📝 Attempting sign up with:', { email, password: '***' });
+    }
     const { error } = await supabase.auth.signUp({
       email,
       password,
     });
-    console.log('📝 Sign up result:', { error: error?.message });
+    if (process.env.NODE_ENV === 'development') {
+      console.log('📝 Sign up result:', { error: error?.message });
+    }
     return { error };
   };
 
