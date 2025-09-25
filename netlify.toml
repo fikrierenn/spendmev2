@@ -2,6 +2,28 @@
   command = "CI=false GENERATE_SOURCEMAP=false PUBLIC_URL=. npm run build"
   publish = "build"
 
+# Static dosyaları hariç tut
+[[redirects]]
+  from = "/static/*"
+  to = "/static/:splat"
+  status = 200
+
+# Diğer static dosyalar
+[[redirects]]
+  from = "/favicon.ico"
+  to = "/favicon.ico"
+  status = 200
+
+[[redirects]]
+  from = "/manifest.json"
+  to = "/manifest.json"
+  status = 200
+
+[[redirects]]
+  from = "/logo*.png"
+  to = "/:splat"
+  status = 200
+
 # SPA routing için
 [[redirects]]
   from = "/*"
