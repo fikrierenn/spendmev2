@@ -1,8 +1,6 @@
-const CACHE_NAME = 'spendme-v1';
+const CACHE_NAME = 'spendme-v2';
 const urlsToCache = [
   '/',
-  '/static/js/bundle.js',
-  '/static/css/main.css',
   '/manifest.json',
   '/favicon.ico',
   '/logo192.png',
@@ -22,6 +20,16 @@ self.addEventListener('install', (event) => {
 
 // Fetch event
 self.addEventListener('fetch', (event) => {
+  // Skip non-GET requests
+  if (event.request.method !== 'GET') {
+    return;
+  }
+
+  // Skip cross-origin requests
+  if (!event.request.url.startsWith(self.location.origin)) {
+    return;
+  }
+
   event.respondWith(
     caches.match(event.request)
       .then((response) => {
@@ -29,9 +37,29 @@ self.addEventListener('fetch', (event) => {
         if (response) {
           return response;
         }
-        return fetch(event.request);
-      }
-    )
+        
+        // Network first for HTML, cache first for assets
+        if (event.request.destination === 'document') {
+          return fetch(event.request).catch(() => {
+            return caches.match('/');
+          });
+        }
+        
+        return fetch(event.request).then((response) => {
+          // Don't cache non-successful responses
+          if (!response || response.status !== 200 || response.type !== 'basic') {
+            return response;
+          }
+
+          // Cache the response
+          const responseToCache = response.clone();
+          caches.open(CACHE_NAME).then((cache) => {
+            cache.put(event.request, responseToCache);
+          });
+
+          return response;
+        });
+      })
   );
 });
 
