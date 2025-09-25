@@ -14,15 +14,16 @@ import Settings from './pages/settings/Settings';
 import Profile from './pages/profile/Profile';
 import Login from './pages/auth/Login';
 import AILogin from './pages/auth/AILogin';
-// Lazy loading for large components
-const AIAddTransaction = lazy(() => import('./pages/transactions/AIAddTransaction'));
-const TransferTransaction = lazy(() => import('./pages/transactions/TransferTransaction'));
 import SupabaseTest from './components/SupabaseTest';
 import TestPage from './pages/TestPage';
 import PWAInstallBanner from './components/ui/PWAInstallBanner';
 import { register } from './serviceWorkerRegistration';
 import './index.css';
 import BudgetStatusPage from './pages/budget-status/BudgetStatusPage';
+
+// Lazy loading for large components
+const AIAddTransaction = lazy(() => import('./pages/transactions/AIAddTransaction'));
+const TransferTransaction = lazy(() => import('./pages/transactions/TransferTransaction'));
 
 // Create a client
 const queryClient = new QueryClient();
