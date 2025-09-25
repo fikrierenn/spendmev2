@@ -1,24 +1,30 @@
-const CACHE_NAME = 'spendme-v2';
-const urlsToCache = [
-  '/',
-  '/manifest.json',
-  '/favicon.ico',
-  '/logo192.png',
-  '/logo512.png'
-];
+// Service Worker - SpendMe v3
+const CACHE_NAME = 'spendme-v3-' + Date.now();
 
-// Install event
+// Install event - minimal cache
 self.addEventListener('install', (event) => {
+  console.log('Service Worker installing...');
+  self.skipWaiting(); // Force activation
+});
+
+// Activate event - clear all old caches
+self.addEventListener('activate', (event) => {
+  console.log('Service Worker activating...');
   event.waitUntil(
-    caches.open(CACHE_NAME)
-      .then((cache) => {
-        console.log('Opened cache');
-        return cache.addAll(urlsToCache);
-      })
+    caches.keys().then((cacheNames) => {
+      return Promise.all(
+        cacheNames.map((cacheName) => {
+          console.log('Deleting old cache:', cacheName);
+          return caches.delete(cacheName);
+        })
+      );
+    }).then(() => {
+      return self.clients.claim(); // Take control immediately
+    })
   );
 });
 
-// Fetch event
+// Fetch event - network first strategy
 self.addEventListener('fetch', (event) => {
   // Skip non-GET requests
   if (event.request.method !== 'GET') {
@@ -30,52 +36,32 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
+  // Network first strategy
   event.respondWith(
-    caches.match(event.request)
+    fetch(event.request)
       .then((response) => {
-        // Cache hit - return response
-        if (response) {
-          return response;
-        }
-        
-        // Network first for HTML, cache first for assets
-        if (event.request.destination === 'document') {
-          return fetch(event.request).catch(() => {
-            return caches.match('/');
+        // Only cache successful responses
+        if (response.status === 200) {
+          const responseClone = response.clone();
+          caches.open(CACHE_NAME).then((cache) => {
+            cache.put(event.request, responseClone);
           });
         }
-        
-        return fetch(event.request).then((response) => {
-          // Don't cache non-successful responses
-          if (!response || response.status !== 200 || response.type !== 'basic') {
+        return response;
+      })
+      .catch(() => {
+        // Fallback to cache only if network fails
+        return caches.match(event.request).then((response) => {
+          if (response) {
             return response;
           }
-
-          // Cache the response
-          const responseToCache = response.clone();
-          caches.open(CACHE_NAME).then((cache) => {
-            cache.put(event.request, responseToCache);
-          });
-
-          return response;
+          // If no cache, return index.html for navigation requests
+          if (event.request.destination === 'document') {
+            return caches.match('/');
+          }
+          return new Response('Offline', { status: 503 });
         });
       })
-  );
-});
-
-// Activate event
-self.addEventListener('activate', (event) => {
-  const cacheWhitelist = [CACHE_NAME];
-  event.waitUntil(
-    caches.keys().then((cacheNames) => {
-      return Promise.all(
-        cacheNames.map((cacheName) => {
-          if (cacheWhitelist.indexOf(cacheName) === -1) {
-            return caches.delete(cacheName);
-          }
-        })
-      );
-    })
   );
 });
 
@@ -89,19 +75,7 @@ self.addEventListener('push', (event) => {
     data: {
       dateOfArrival: Date.now(),
       primaryKey: 1
-    },
-    actions: [
-      {
-        action: 'explore',
-        title: 'Görüntüle',
-        icon: '/logo192.png'
-      },
-      {
-        action: 'close',
-        title: 'Kapat',
-        icon: '/logo192.png'
-      }
-    ]
+    }
   };
 
   event.waitUntil(
@@ -112,10 +86,7 @@ self.addEventListener('push', (event) => {
 // Notification click event
 self.addEventListener('notificationclick', (event) => {
   event.notification.close();
-
-  if (event.action === 'explore') {
-    event.waitUntil(
-      clients.openWindow('/')
-    );
-  }
-}); 
+  event.waitUntil(
+    clients.openWindow('/')
+  );
+});

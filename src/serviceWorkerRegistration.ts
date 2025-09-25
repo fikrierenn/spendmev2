@@ -35,6 +35,9 @@ function registerValidSW(swUrl: string, config?: Config) {
   navigator.serviceWorker
     .register(swUrl)
     .then((registration) => {
+      // Force immediate update
+      registration.update();
+      
       registration.onupdatefound = () => {
         const installingWorker = registration.installing;
         if (installingWorker == null) {
@@ -43,7 +46,9 @@ function registerValidSW(swUrl: string, config?: Config) {
         installingWorker.onstatechange = () => {
           if (installingWorker.state === 'installed') {
             if (navigator.serviceWorker.controller) {
-              console.log('New content is available and will be used when all tabs for this page are closed. See https://cra.link/PWA.');
+              console.log('New content is available, reloading...');
+              // Force reload for PWA
+              window.location.reload();
               if (config && config.onUpdate) {
                 config.onUpdate(registration);
               }
