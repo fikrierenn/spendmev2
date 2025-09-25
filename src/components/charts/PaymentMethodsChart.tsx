@@ -74,8 +74,8 @@ const PaymentMethodsChart: React.FC<PaymentMethodsChartProps> = ({ data }) => {
             data={data}
             cx="50%"
             cy="50%"
-            innerRadius={60}
-            outerRadius={80}
+            innerRadius="40%"
+            outerRadius="70%"
             paddingAngle={2}
             dataKey="value"
           >
@@ -91,7 +91,7 @@ const PaymentMethodsChart: React.FC<PaymentMethodsChartProps> = ({ data }) => {
       {/* Merkezde toplam tutar göster */}
       <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
         <div className="text-center">
-          <div className="text-lg font-bold text-gray-900 dark:text-white">
+          <div className="text-sm sm:text-lg font-bold text-gray-900 dark:text-white">
             {total.toLocaleString('tr-TR', { style: 'currency', currency: 'TRY' })}
           </div>
           <div className="text-xs text-gray-500 dark:text-gray-400">Toplam</div>

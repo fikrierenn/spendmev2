@@ -134,23 +134,24 @@ const AccountModal: React.FC<AccountModalProps> = ({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-2 sm:p-4">
+      <div className="bg-white rounded-lg sm:rounded-xl shadow-xl max-w-2xl w-full max-h-[95vh] sm:max-h-[90vh] overflow-y-auto">
         {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b">
-          <h2 className="text-xl font-semibold text-gray-900">
+        <div className="flex items-center justify-between p-4 sm:p-6 border-b sticky top-0 bg-white z-10">
+          <h2 className="text-lg sm:text-xl font-semibold text-gray-900">
             {isEditing ? 'Hesap Düzenle' : 'Yeni Hesap'}
           </h2>
           <button
             onClick={onClose}
-            className="text-gray-400 hover:text-gray-600"
+            className="text-gray-400 hover:text-gray-600 p-1 -mr-1"
+            aria-label="Kapat"
           >
             <X className="h-5 w-5" />
           </button>
         </div>
 
         {/* Form */}
-        <form onSubmit={handleSubmit} className="p-6 space-y-4">
+        <form onSubmit={handleSubmit} className="p-4 sm:p-6 space-y-4 sm:space-y-6">
           {error && (
             <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
               {error}
@@ -166,7 +167,7 @@ const AccountModal: React.FC<AccountModalProps> = ({
               type="text"
               value={formData.name}
               onChange={(e) => handleInputChange('name', e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
+              className="w-full px-3 py-2.5 sm:py-2 border border-gray-300 rounded-lg sm:rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 text-base sm:text-sm"
               placeholder="Örn: Ziraat Bankası"
               maxLength={50}
             />
@@ -343,18 +344,18 @@ const AccountModal: React.FC<AccountModalProps> = ({
           </div>
 
           {/* Actions */}
-          <div className="flex space-x-3 pt-4">
+          <div className="flex space-x-3 pt-4 border-t sticky bottom-0 bg-white">
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 px-4 py-2 text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200 transition-colors"
+              className="flex-1 px-4 py-3 sm:py-2 text-gray-700 bg-gray-100 rounded-lg sm:rounded-md hover:bg-gray-200 transition-colors text-base sm:text-sm font-medium"
             >
               İptal
             </button>
             <button
               type="submit"
               disabled={loading}
-              className="flex-1 px-4 py-2 bg-primary-600 text-white rounded-md hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center"
+              className="flex-1 px-4 py-3 sm:py-2 bg-primary-600 text-white rounded-lg sm:rounded-md hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center text-base sm:text-sm font-medium"
             >
               {loading ? (
                 <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
